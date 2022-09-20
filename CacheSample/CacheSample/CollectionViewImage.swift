@@ -21,7 +21,9 @@ class CollectionViewImage : UICollectionViewCell {
     
     public var image: UIImage? {
         didSet {
-            imageView.image = image
+            DispatchQueue.main.async {
+                self.imageView.image = self.image
+            }
         }
     }
     
@@ -35,9 +37,9 @@ class CollectionViewImage : UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        self.imageView.backgroundColor = .blue
+//        self.imageView.backgroundColor = .blue
         self.imageView.layer.borderWidth = 1.0
-        self.titleLabel.backgroundColor = .gray
+//        self.titleLabel.backgroundColor = .gray
     }
     
     override func layoutSubviews() {
@@ -54,7 +56,6 @@ class CollectionViewImage : UICollectionViewCell {
             self.imageView.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor, constant: -30),
             self.imageView.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor, constant: -60)
         ]
-        
         NSLayoutConstraint.activate(contraints1)
         
         let contraints2 = [
@@ -65,11 +66,6 @@ class CollectionViewImage : UICollectionViewCell {
         ]
         
         NSLayoutConstraint.activate(contraints2)
-    }
-    
-    func setImageCacheInfo(_ name: String, image : UIImage) {
-        self.image = image
-        self.title = name
     }
     
 }

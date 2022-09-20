@@ -24,7 +24,9 @@ class ViewController: UIViewController {
         self.createNavigator()
         self.fecthData { results in
             if results {
-                self.collectionView.reloadData()
+                DispatchQueue.main.async {
+                    self.collectionView.reloadData()
+                }
             }
         }
     }
@@ -94,8 +96,7 @@ extension ViewController : UICollectionViewDelegate, UICollectionViewDataSource 
             cell.image = UIImage(systemName: "picture")
         }
         
-        cell.title = self.imageList[indexPath.row].description
-        
+        cell.title = self.imageList[indexPath.row].alt_description
         return cell
     }
     
@@ -109,7 +110,8 @@ extension ViewController : UICollectionViewDelegate, UICollectionViewDataSource 
 extension ViewController {
     
     @objc func OnAddPictureFromWeb() {
-        print("On Click Add Picture")
+        print("On Click Remove all cache")
+        RequestManager.sharedInstance.imageCache.removeAllObjects()
     }
     
 }

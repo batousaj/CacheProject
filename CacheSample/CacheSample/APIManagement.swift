@@ -8,15 +8,29 @@
 import Foundation
 import UIKit
 
-fileprivate struct Results : Codable {
-    let results: [Package.ImageCache]
+fileprivate struct Results : Decodable {
+    var results: [Package.ImageCache]?
+    
+    enum CodingKeys : String, CodingKey {
+        case results
+    }
+        
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        self.results = try container.decode([Package.ImageCache].self, forKey: .results)
+    }
 }
 
 class RequestManager  {
     
     static let sharedInstance = RequestManager()
     
-    init() {}
+    var imageCache = NSCache<NSString,UIImage>()
+    
+    init() {
+        imageCache.countLimit = 20
+    }
     
     private func request(URLs : URL) -> URLRequest? {
         var request = URLRequest(url: URLs)
@@ -60,6 +74,10 @@ class RequestManager  {
     }
     
     func downloadImage(_ urls: URL, successHandler:@escaping (UIImage?, Error?)-> Void ) {
+        if imageCache.object(forKey: urls.absoluteString as NSString) != nil {
+            print("Image was state in cache")
+            return;
+        }
         let task = URLSession.shared.downloadTask(with: urls) { url, response, error in
             if error != nil {
                 successHandler(nil,StatusImage.falied)
@@ -71,18 +89,17 @@ class RequestManager  {
                 return
             }
             
-            guard let localUrl = url else {
+            guard url != nil else {
                 successHandler(nil, StatusImage.falied)
                 return
             }
             
             do {
                 let decode = try Data(contentsOf: url!)
-                let imageCache = NSCache<NSString,UIImage>()
-                let urlStr = localUrl.absoluteString as NSString
+                let urlStr = urls.absoluteString as NSString
                 
                 if let image = UIImage(data: decode) {
-                    imageCache.setObject(image, forKey: urlStr)
+                    self.imageCache.setObject(image, forKey: urlStr)
                     print("Save cache Image")
                     successHandler(image, nil)
                 }
