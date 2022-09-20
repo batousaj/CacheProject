@@ -112,6 +112,7 @@ extension ViewController {
     @objc func OnAddPictureFromWeb() {
         print("On Click Remove all cache")
         RequestManager.sharedInstance.imageCache.removeAllValue()
+//        RequestManager.sharedInstance.imageCache.saveToFile()
     }
     
 }

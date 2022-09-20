@@ -34,7 +34,7 @@ final class CacheManagers<Key: Hashable, Value : Any> {
     fileprivate func createCacheDirectory() {
         let searchPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
         let path = searchPath[0] as NSString
-        let component = path.appendingPathComponent("text.cache")
+        let component = path.appendingPathComponent("image.cache")
         if !FileManager.default.fileExists(atPath: component) {
             FileManager.default.createFile(atPath: component, contents: nil)
         }
@@ -57,6 +57,20 @@ final class CacheManagers<Key: Hashable, Value : Any> {
         cache.removeAllObjects()
     }
     
+    func saveToFile() {
+        let searchPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
+        let path = searchPath[0] as NSString
+        let component = path.appendingPathComponent("image.cache")
+        if FileManager.default.fileExists(atPath: component) {
+            let data = Data()
+            do {
+                try data.write(to: URL(fileURLWithPath: component))
+            }
+            catch {
+                fatalError("Save data to cache file failed")
+            }
+        }
+    }
 }
 
 private extension CacheManagers {
@@ -103,3 +117,18 @@ extension CacheManagers {
         }
     }
 }
+
+//extension CacheManagers : Codable where Key : Codable, Value : Codable {
+//    convenience init(from decoder: Decoder) throws {
+//        self.init()
+//
+//        let container = try decoder.singleValueContainer()
+//        let entries = try container.decode([Value].self)
+//        entries.forEach(insertValue)
+//    }
+//
+//    func encode(to encoder: Encoder) throws {
+//        var container = encoder.singleValueContainer()
+//        try container.encode(keyTracker.keys.compactMap(Value))
+//    }
+//}
