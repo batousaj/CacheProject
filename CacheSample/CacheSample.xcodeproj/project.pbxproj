@@ -16,6 +16,7 @@
 		B19560EA28D5B9A800FE9835 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B19560E928D5B9A800FE9835 /* Assets.xcassets */; };
 		B19560ED28D5B9A800FE9835 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B19560EB28D5B9A800FE9835 /* LaunchScreen.storyboard */; };
 		B19E139728D5CD23005E44BE /* CollectionViewImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19E139628D5CD23005E44BE /* CollectionViewImage.swift */; };
+		B1AE86CC28D9BD74008CE9C1 /* CacheManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AE86CB28D9BD74008CE9C1 /* CacheManagement.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		B19560EC28D5B9A800FE9835 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		B19560EE28D5B9A800FE9835 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B19E139628D5CD23005E44BE /* CollectionViewImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionViewImage.swift; sourceTree = "<group>"; };
+		B1AE86CB28D9BD74008CE9C1 /* CacheManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheManagement.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +74,7 @@
 				B19560EE28D5B9A800FE9835 /* Info.plist */,
 				B192469128D5E16000AA479A /* APIManagement.swift */,
 				B192469328D82F8300AA479A /* Model.swift */,
+				B1AE86CB28D9BD74008CE9C1 /* CacheManagement.swift */,
 			);
 			path = CacheSample;
 			sourceTree = "<group>";
@@ -150,6 +153,7 @@
 				B19560E528D5B9A600FE9835 /* ViewController.swift in Sources */,
 				B19560E128D5B9A600FE9835 /* AppDelegate.swift in Sources */,
 				B192469228D5E16000AA479A /* APIManagement.swift in Sources */,
+				B1AE86CC28D9BD74008CE9C1 /* CacheManagement.swift in Sources */,
 				B192469428D82F8300AA479A /* Model.swift in Sources */,
 				B19E139728D5CD23005E44BE /* CollectionViewImage.swift in Sources */,
 				B19560E328D5B9A600FE9835 /* SceneDelegate.swift in Sources */,
