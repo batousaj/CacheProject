@@ -26,7 +26,7 @@ class RequestManager  {
     
     static let sharedInstance = RequestManager()
     
-    var imageCache = CacheManagers<NSString,UIImage>()
+    var imageCache = CacheManagers<String,Data>()
     
     init() {
         imageCache.countLimit = 20
@@ -57,6 +57,7 @@ class RequestManager  {
                         successHandler(nil,Status.badResponse)
                         return
                     }
+                    
                     do {
                         let decode = try JSONDecoder().decode(Results.self, from: data!)
                         successHandler(decode.results, nil)
@@ -74,7 +75,7 @@ class RequestManager  {
     }
     
     func downloadImage(_ urls: URL, successHandler:@escaping (UIImage?, Error?)-> Void ) {
-        if imageCache.valueForKey( urls.absoluteString as NSString) != nil {
+        if imageCache.valueForKey( urls.absoluteString) != nil {
             print("Image was state in cache")
             return;
         }
@@ -96,10 +97,10 @@ class RequestManager  {
             
             do {
                 let decode = try Data(contentsOf: url!)
-                let urlStr = urls.absoluteString as NSString
+                let urlStr = urls.absoluteString
+                self.imageCache.insertValue(decode, forKey: urlStr)
                 
                 if let image = UIImage(data: decode) {
-                    self.imageCache.insertValue(image, forKey: urlStr)
                     print("Save cache Image")
                     successHandler(image, nil)
                 }

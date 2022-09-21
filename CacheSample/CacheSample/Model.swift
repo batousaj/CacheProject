@@ -22,6 +22,11 @@ enum StatusImage : Error {
     case falied
 }
 
+enum OptionsWrite  {
+    case kWithoutOverwrite
+    case kOverwrite
+}
+
 class Package {
     /*
      http://user:Password@example.com:8000/over/there/text.dtb?type=animal&name=narwhal#nose

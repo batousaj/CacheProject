@@ -34,7 +34,7 @@ class ViewController: UIViewController {
     func createNavigator() {
         self.title = "Image Caching"
         self.navigationController?.navigationBar.backgroundColor = .systemGray6
-        let barButton = UIBarButtonItem.init(image: UIImage.init(systemName: "plus.circle.fill")!, style: .done, target: self, action: #selector(OnAddPictureFromWeb))
+        let barButton = UIBarButtonItem.init(image: UIImage.init(systemName: "square.and.arrow.down.fill")!, style: .done, target: self, action: #selector(OnAddPictureFromWeb))
         barButton.tintColor = .black
         
         self.navigationItem.rightBarButtonItem = barButton
@@ -108,13 +108,18 @@ extension ViewController : UICollectionViewDelegate, UICollectionViewDataSource 
 // MARK: - Objective C extension
 
 extension ViewController {
-    
     @objc func OnAddPictureFromWeb() {
-        print("On Click Remove all cache")
-        RequestManager.sharedInstance.imageCache.removeAllValue()
-//        RequestManager.sharedInstance.imageCache.saveToFile()
+        var alert = UIAlertController()
+        do {
+            try RequestManager.sharedInstance.imageCache.saveToFile(options: .kOverwrite)
+            alert = UIAlertController(title: "Notification", message: "Save image list into file cache file successd", preferredStyle: .alert)
+        } catch {
+            alert = UIAlertController(title: "Notification", message: "Save image list into file cache file failed", preferredStyle: .alert)
+        }
+        
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        self.present(alert, animated: true)
     }
-    
 }
 
 

@@ -10,6 +10,7 @@ import Foundation
 final class CacheManagers<Key: Hashable, Value : Any> {
     
     private var cache = NSCache<KeyCache,ValueCache>()
+    private var keyTrack = KeyTracking()
     private var expirationTime = TimeInterval()
     
     public var countLimit:Int {
@@ -22,55 +23,58 @@ final class CacheManagers<Key: Hashable, Value : Any> {
     }
     
     init() {
-        self.createCacheDirectory()
+        let success = self.createCacheDirectory()
+        if success {
+            print("Cache file create successed")
+        } else {
+            print("Cache file create failed")
+        }
     }
     
-    init( countLimit : Int, expireTimes: TimeInterval ) {
-        self.createCacheDirectory()
+    convenience init( countLimit : Int, expireTimes: TimeInterval ) {
+        self.init()
         self.cache.countLimit = countLimit
         self.expirationTime = expireTimes
     }
     
-    fileprivate func createCacheDirectory() {
+    fileprivate func createCacheDirectory() -> Bool {
         let searchPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
         let path = searchPath[0] as NSString
         let component = path.appendingPathComponent("image.cache")
         if !FileManager.default.fileExists(atPath: component) {
-            FileManager.default.createFile(atPath: component, contents: nil)
+            return FileManager.default.createFile(atPath: component, contents: nil)
         }
+        return true
     }
     
     public func insertValue(_ value : Value , forKey key: Key ) {
-        cache.setObject(ValueCache.init(value), forKey: KeyCache.init(key))
+        let keyCache = KeyCache(key)
+        keyTrack.append(keyCache)
+        cache.setObject(ValueCache(value), forKey: keyCache)
     }
     
     public func valueForKey(_ key: Key ) -> Value? {
-        let value = cache.object(forKey: KeyCache.init(key))
-        return value?.value
+        for key_ in self.keyTrack.keys {
+            if key_.isEqual(KeyCache(key)) {
+                let value = cache.object(forKey: key_)
+                return value?.value
+            }
+        }
+        return nil
     }
     
     public func removeValueforKey(_ key: Key ) {
-        cache.removeObject(forKey: KeyCache.init(key))
+        cache.removeObject(forKey: KeyCache(key))
     }
     
     public func removeAllValue() {
         cache.removeAllObjects()
     }
     
-    func saveToFile() {
-        let searchPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
-        let path = searchPath[0] as NSString
-        let component = path.appendingPathComponent("image.cache")
-        if FileManager.default.fileExists(atPath: component) {
-            let data = Data()
-            do {
-                try data.write(to: URL(fileURLWithPath: component))
-            }
-            catch {
-                fatalError("Save data to cache file failed")
-            }
-        }
+    public func numberOfKeys() -> Int {
+        return keyTrack.keys.count
     }
+
 }
 
 private extension CacheManagers {
@@ -84,22 +88,39 @@ private extension CacheManagers {
         override var hash: Int { return self.key.hashValue }
         
         // override equalable
-        static func ==(lhs:KeyCache , rhs:KeyCache) -> Bool {
-            return lhs.key == rhs.key
+        override func isEqual(_ object: Any?) -> Bool {
+            guard let object_ = object as? KeyCache else {
+                return false
+            }
+            return object_.key == self.key
         }
     }
 }
 
 private extension CacheManagers {
-    final class ValueCache {
+    final class ValueCache  {
         let value : Value
         var expirationTimes = TimeInterval()
-        
+
         init (_ value : Value, expireTimes: TimeInterval = 0) {
             self.value = value
             self.expirationTimes = expireTimes
         }
 
+    }
+}
+
+extension CacheManagers.ValueCache: Codable where Key: Codable, Value: Codable {}
+
+private extension CacheManagers {
+    private class KeyTracking {
+        var keys = Set<KeyCache>()
+        
+        init() {}
+        
+        func append(_ key: KeyCache) {
+            keys.insert(key)
+        }
     }
 }
 
@@ -118,17 +139,69 @@ extension CacheManagers {
     }
 }
 
-//extension CacheManagers : Codable where Key : Codable, Value : Codable {
-//    convenience init(from decoder: Decoder) throws {
-//        self.init()
-//
-//        let container = try decoder.singleValueContainer()
-//        let entries = try container.decode([Value].self)
-//        entries.forEach(insertValue)
-//    }
-//
-//    func encode(to encoder: Encoder) throws {
-//        var container = encoder.singleValueContainer()
-//        try container.encode(keyTracker.keys.compactMap(Value))
-//    }
-//}
+extension CacheManagers : Codable where Key : Codable, Value : Codable {
+    convenience init(from decoder: Decoder) throws {
+        self.init()
+        
+        let container = try decoder.singleValueContainer()
+        let decode = try container.decode([decodePackage].self)
+        try decode.forEach(value)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(keyTrack.keys.compactMap({ keyCache in
+            return try insert(keyCache)
+        }))
+    }
+    
+    struct decodePackage : Decodable {
+        let key : Key
+        let value : Value
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            self.key = try container.decode(Key.self)
+            self.value = try container.decode(Value.self)
+        }
+    }
+    
+    fileprivate func insert(_ key : KeyCache) throws -> ValueCache? {
+        let value = cache.object(forKey: key)
+        return value
+    }
+    
+    fileprivate func value(_ package : decodePackage) throws {
+        let key = KeyCache(package.key)
+        self.keyTrack.append(key)
+        cache.setObject(ValueCache(package.value), forKey:key)
+    }
+    
+    func saveToFile(options: OptionsWrite) throws {
+        let searchPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
+        let path = searchPath[0] as NSString
+        let component = path.appendingPathComponent("image.cache")
+        print("path :\(component)")
+        if FileManager.default.fileExists(atPath: component) {
+            let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: component))
+            let data = try JSONEncoder().encode(self)
+            
+            if options == .kOverwrite {
+                fileHandle.write(data)
+            } else if options == .kWithoutOverwrite {
+                try fileHandle.seek(toOffset: fileHandle.seekToEndOfFile())
+                fileHandle.write(data)
+            }
+            
+            fileHandle.closeFile()
+        } else {
+            let success = self.createCacheDirectory()
+            if success {
+                let data = try JSONEncoder().encode(self)
+                try data.write(to: URL(fileURLWithPath: component))
+            }
+        }
+    }
+    
+}
+
