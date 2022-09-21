@@ -234,5 +234,19 @@ extension CacheManagers : Codable where Key : Codable, Value : Codable {
         }
     }
     
+    func readFromFile() throws {
+        let searchPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
+        let path = searchPath[0] as NSString
+        let component = path.appendingPathComponent("image.cache")
+        print("path :\(component)")
+        if FileManager.default.fileExists(atPath: component) {
+            let dataDecoded = try Data(contentsOf: URL(fileURLWithPath: component))
+            let data = try JSONDecoder().decode([decodePackage].self, from: dataDecoded)
+            for data_ in data {
+                self.insertValue(data_.value, forKey: data_.key)
+            }
+        }
+    }
+    
 }
 

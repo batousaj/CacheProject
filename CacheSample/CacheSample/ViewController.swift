@@ -102,6 +102,8 @@ extension ViewController : UICollectionViewDelegate, UICollectionViewDataSource 
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         print("collectionView select at \(indexPath.row)")
+        let data = RequestManager.sharedInstance.imageCache.valueForKey(self.imageList[indexPath.row].urls.regular)
+        _ = UIImage(data: data!)
     }
 }
 
