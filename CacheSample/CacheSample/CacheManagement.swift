@@ -11,6 +11,7 @@ final class CacheManagers<Key: Hashable, Value : Any> {
     
     private var cache = NSCache<KeyCache,ValueCache>()
     private var keyTrack = KeyTracking()
+    private var dateProvider : () -> Date?
     private var expirationTime = TimeInterval()
     
     public var countLimit:Int {
@@ -23,7 +24,9 @@ final class CacheManagers<Key: Hashable, Value : Any> {
     }
     
     init() {
-        let success = self.createCacheDirectory()
+        self.dateProvider = Date.init
+        
+        let success = createCacheDirectory()
         if success {
             print("Cache file create successed")
         } else {
@@ -31,9 +34,9 @@ final class CacheManagers<Key: Hashable, Value : Any> {
         }
     }
     
-    convenience init( countLimit : Int, expireTimes: TimeInterval ) {
-        self.init()
+    init( countLimit : Int, expireTimes: TimeInterval = 10, dateProvide : @escaping () -> Date? ) {
         self.cache.countLimit = countLimit
+        self.dateProvider = dateProvide
         self.expirationTime = expireTimes
     }
     
@@ -50,14 +53,26 @@ final class CacheManagers<Key: Hashable, Value : Any> {
     public func insertValue(_ value : Value , forKey key: Key ) {
         let keyCache = KeyCache(key)
         keyTrack.append(keyCache)
-        cache.setObject(ValueCache(value), forKey: keyCache)
+        let Date = Date()
+        let date = Date.addingTimeInterval(self.expirationTime)
+        cache.setObject(ValueCache(value,expireTimes: date), forKey: keyCache)
     }
     
     public func valueForKey(_ key: Key ) -> Value? {
         for key_ in self.keyTrack.keys {
             if key_.isEqual(KeyCache(key)) {
-                let value = cache.object(forKey: key_)
-                return value?.value
+                
+                guard let value = cache.object(forKey: key_) else {
+                    return nil
+                }
+                
+                guard let date = dateProvider(), date < value.expirationTimes else {
+                    // Discard values that have expired
+                    removeValueforKey(key)
+                    return nil
+                }
+                
+                return value.value
             }
         }
         return nil
@@ -100,9 +115,13 @@ private extension CacheManagers {
 private extension CacheManagers {
     final class ValueCache  {
         let value : Value
-        var expirationTimes = TimeInterval()
+        var expirationTimes = Date()
+        
+        init (_ value : Value) {
+            self.value = value
+        }
 
-        init (_ value : Value, expireTimes: TimeInterval = 0) {
+        init (_ value : Value, expireTimes: Date) {
             self.value = value
             self.expirationTimes = expireTimes
         }
@@ -167,14 +186,26 @@ extension CacheManagers : Codable where Key : Codable, Value : Codable {
     }
     
     fileprivate func insert(_ key : KeyCache) throws -> ValueCache? {
-        let value = cache.object(forKey: key)
+        
+        guard let value = cache.object(forKey: key) else {
+            return nil
+        }
+        
+        guard let date = dateProvider(), date < value.expirationTimes else {
+            // Discard values that have expired
+            removeValueforKey(key.key)
+            return nil
+        }
+        
         return value
     }
     
     fileprivate func value(_ package : decodePackage) throws {
         let key = KeyCache(package.key)
         self.keyTrack.append(key)
-        cache.setObject(ValueCache(package.value), forKey:key)
+        let Date = Date()
+        let date = Date.addingTimeInterval(self.expirationTime)
+        cache.setObject(ValueCache(package.value, expireTimes: date), forKey:key)
     }
     
     func saveToFile(options: OptionsWrite) throws {

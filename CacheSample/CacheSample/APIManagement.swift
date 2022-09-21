@@ -26,10 +26,12 @@ class RequestManager  {
     
     static let sharedInstance = RequestManager()
     
-    var imageCache = CacheManagers<String,Data>()
+    var imageCache = CacheManagers<String,Data>.init(countLimit: 20) {
+        return Date.init()
+    }
     
     init() {
-        imageCache.countLimit = 20
+//        imageCache.countLimit = 20
     }
     
     private func request(URLs : URL) -> URLRequest? {
